@@ -1,4 +1,4 @@
-# MMI County Dashboard
+# MMI Dashboard
 
 County-level indicator database and query interface for the MMI project — median
 income, housing costs, demographics, employment, healthcare access, and more,
@@ -28,7 +28,7 @@ cp .env.example .env  # fill in CENSUS_API_KEY and BLS_API_KEY
 
 Run any pull script directly: `PYTHONPATH=src python3 -m mmi.sources.acs`
 
-Run the app locally: `streamlit run app/Home.py`
+Run the app locally: `streamlit run app/MMI_Dashboard.py`
 
 ## Data sources
 

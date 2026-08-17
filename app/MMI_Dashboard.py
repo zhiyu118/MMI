@@ -9,7 +9,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mmi.build_db import load_county_master  # noqa: E402
 
-st.set_page_config(page_title="MMI County Dashboard", layout="wide")
+st.set_page_config(page_title="MMI Dashboard", layout="wide")
 
 LABELS = {
     "median_monthly_hh_income": "Median Monthly Household Income ($)",
@@ -48,7 +48,7 @@ def get_county_geojson():
 df = get_data()
 numeric_cols = [c for c in LABELS if c in df.columns]
 
-st.title("MMI County Dashboard")
+st.title("MMI Dashboard")
 st.caption(f"{len(df):,} counties · updated indicators pulled from Census, BLS, and HRSA")
 
 st.sidebar.header("Filters")
@@ -103,10 +103,13 @@ if len(filtered) > 0:
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=450)
     st.plotly_chart(fig, width="stretch")
 
-    st.subheader("Filtered counties")
-    display_cols = ["county_name", "state"] + ordered_selected_vars
+    st.subheader("Counties")
+    display_cols = ["county_name", "state"] + numeric_cols
+    rename_map = {"county_name": "County", "state": "State"}
+    for c in numeric_cols:
+        rename_map[c] = f"🔵 {LABELS[c]}" if c in ordered_selected_vars else LABELS[c]
     st.dataframe(
-        filtered[["fips"] + display_cols].rename(columns=LABELS),
+        filtered[["fips"] + display_cols].rename(columns=rename_map),
         width="stretch",
         height=400,
         hide_index=True,
