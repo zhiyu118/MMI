@@ -1,8 +1,7 @@
 """Joins every source's Parquet file into one county-level table, keyed on fips.
 
 Generic by design: any new file dropped into data/processed/ with a 'fips' column
-gets joined in automatically, so adding sfid/nces_el/cdc_natality/cnt_ht later
-needs no changes here.
+gets joined in automatically, so adding a new source later needs no changes here.
 """
 import duckdb
 import pandas as pd

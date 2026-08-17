@@ -42,7 +42,6 @@ Run the app locally: `streamlit run app/Home.py`
 | HRSA AHRF (primary care provider ratio) | ✅ working | Annual |
 | School Finance Indicators DB (adequacy) | ✅ working — district-level data enrollment-weighted up to county via `src/mmi/district_crosswalk.py` | Annual |
 | CNT H+T Index (transportation cost burden) | ✅ working — fully automated, no account needed (see note below) | Irregular — CNT's current release is still 2022 |
-| NCES EDFacts (EL enrollment) | ⏳ not implemented — confirmed EL/LEP data lives outside CCD proper; see `src/mmi/sources/nces_el.py` for what was ruled out and the likely next step | Annual |
 
 **Birth Rate** comes from the Census PEP file (`src/mmi/sources/pep.py`), not CDC
 WONDER — CDC WONDER's own API documentation states its public API is policy-blocked
@@ -59,3 +58,14 @@ step needed in the pipeline at all.
 Dropped from the original scope (no reliable, annually-updated, full-county-coverage
 source exists): Job Openings, Unemployed-to-Job-Openings Ratio, Proximity to
 Essential Services, Utilization of Public School Facilities.
+
+Also dropped: **EL Program Enrollment Count** and **English Learner Population as
+% of Total Population**. The administrative source (EDFacts's Title III/LEP data)
+turned out to be unreachable — it's not part of CCD, and both paths to it found
+(`www2.ed.gov`'s old bulk-file index, `eddataexpress.ed.gov`) are gone or bot-gated.
+ACS's language-proficiency tables (`B16004`) were considered as a substitute but
+rejected: "speaks English less than very well" is a self-reported survey answer,
+not the same thing as being administratively identified and enrolled in EL
+services — different population, different threshold, no reclassification when a
+student exits the program. Shipping it under an "EL" label would misrepresent
+what's actually being measured, so it's dropped rather than approximated.

@@ -1,4 +1,8 @@
-"""LEA (school district) -> county FIPS crosswalk, shared by sfid.py and nces_el.py.
+"""LEA (school district) -> county FIPS crosswalk, used by sfid.py.
+
+(Originally built to also serve an EL-enrollment source, but that indicator was
+dropped — see README.md's "Dropped from scope" note. Kept general-purpose in
+case another district-level source gets added later.)
 
 Verified working against NCES's ArcGIS REST geocode layer (found by inspecting the
 Angular app behind nces.ed.gov/ccd/files.asp's network calls, then the geocode

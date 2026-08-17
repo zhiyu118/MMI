@@ -6,10 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from mmi.sources import acs, bls_laus, cnt_ht, hrsa, nces_el, pep, sfid  # noqa: E402
+from mmi.sources import acs, bls_laus, cnt_ht, hrsa, pep, sfid  # noqa: E402
 
 # cdc_natality isn't runnable — birth rate comes from pep.py instead. See its docstring.
-ANNUAL_SOURCES = [acs, pep, hrsa, sfid, nces_el, cnt_ht]
+ANNUAL_SOURCES = [acs, pep, hrsa, sfid, cnt_ht]
 MONTHLY_SOURCES = [bls_laus]
 
 
