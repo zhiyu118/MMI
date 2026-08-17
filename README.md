@@ -41,8 +41,8 @@ Run the app locally: `streamlit run app/Home.py`
 | HRSA HPSA (shortage designation) | ✅ working | Annual |
 | HRSA AHRF (primary care provider ratio) | ✅ working | Annual |
 | School Finance Indicators DB (adequacy) | ✅ working — district-level data enrollment-weighted up to county via `src/mmi/district_crosswalk.py` | Annual |
+| CNT H+T Index (transportation cost burden) | ✅ working — fully automated, no account needed (see note below) | Irregular — CNT's current release is still 2022 |
 | NCES EDFacts (EL enrollment) | ⏳ not implemented — confirmed EL/LEP data lives outside CCD proper; see `src/mmi/sources/nces_el.py` for what was ruled out and the likely next step | Annual |
-| CNT H+T Index (transportation cost burden) | ⏳ not implemented, needs a CNT account — see `src/mmi/sources/cnt_ht.py` | Irregular |
 
 **Birth Rate** comes from the Census PEP file (`src/mmi/sources/pep.py`), not CDC
 WONDER — CDC WONDER's own API documentation states its public API is policy-blocked
@@ -50,6 +50,11 @@ from returning natality data grouped or filtered by any location field (state or
 county), so no XML query could ever get county-level results from it. `pep.py`'s
 existing county-level file already carries full-coverage birth counts and a crude
 birth rate sourced from the same underlying NCHS vital statistics.
+
+**CNT H+T Index** looks account-gated on the site, but its "All Counties" national
+download (`download.php?data_yr=2022&focus=county` on htaindex.cnt.org, found by
+reading the download page's own JS) is a plain unauthenticated file — no login
+step needed in the pipeline at all.
 
 Dropped from the original scope (no reliable, annually-updated, full-county-coverage
 source exists): Job Openings, Unemployed-to-Job-Openings Ratio, Proximity to

@@ -28,6 +28,7 @@ LABELS = {
     "hpsa_score": "HPSA Score (higher = more severe shortage)",
     "population_per_primary_care_physician": "Population per Primary Care Physician",
     "school_adequacy_rate": "School Adequacy Rate ($ per pupil, actual - required)",
+    "transportation_cost_burden_pct": "Transportation Cost Burden (% of income, 2022)",
 }
 
 
