@@ -14,16 +14,20 @@ urban counties, e.g. Milwaukee County WI has 116), we take the single most sever
 record by HPSA Score, since "HPSA Designation" is meant to describe the county's
 worst documented shortage, not an average across areas of very different size.
 
-Provider-to-population ratio — NOT YET IMPLEMENTED. The HPSA file above only
-covers counties with an active shortage designation (~1,015 of 3,144), so it can't
-give a ratio for every county as required. Full county coverage needs the Area
-Health Resource Files (AHRF) instead, which has raw physician counts + population
-for all counties — confirmed downloadable at:
+Provider-to-population ratio — the HPSA file above only covers counties with an
+active shortage designation (~1,015 of 3,144), so it can't give a ratio for every
+county. Full coverage comes from the Area Health Resource Files (AHRF) instead,
+confirmed downloadable at:
 https://data.hrsa.gov/DataDownload/AHRF/AHRF_2024-2025_CSV.zip
-But AHRF's ~40MB main file uses opaque numeric field codes (e.g. "F1234_25") that
-need to be mapped via the technical documentation zip (AHRF_USER_TECH_2024-2025.zip)
-to find the current-year "active primary care physicians" and "population" fields
-before this can be built.
+Field names (not opaque codes, despite the technical doc's "field numbers" framing
+— those turned out to be page numbers in a printed table of contents) were found
+by downloading AHRF_USER_TECH_2024-2025.zip and reading its
+"AHRF 2024-2025 Technical Documentation.xlsx", which lists every column's variable
+name, source, and vintage. Confirmed fields, both keyed on `fips_st_cnty`:
+  - AHRF2025hp.csv: phys_nf_prim_care_pc_exc_rsdt_23 (non-federal primary care
+    physicians in patient care, excluding hospital residents and age 75+, 2023)
+  - AHRF2025pop.csv: popn_est_23 (population estimate, 2023 — matched to the same
+    year as the physician count rather than mixing vintages)
 """
 import io
 import zipfile
@@ -34,6 +38,7 @@ import requests
 from mmi.config import DATA_PROCESSED
 
 HPSA_URL = "https://data.hrsa.gov/DataDownload/DD_Files/BCD_HPSA_FCT_DET_PC.csv"
+AHRF_URL = "https://data.hrsa.gov/DataDownload/AHRF/AHRF_2024-2025_CSV.zip"
 GEO_TYPE_CODES = {"Hpsa Geo", "Hpsa Geo HN"}
 
 
@@ -56,18 +61,41 @@ def fetch_hpsa_designation() -> pd.DataFrame:
     ).sort_values("fips").reset_index(drop=True)
 
 
+def _read_ahrf_csv(zf: zipfile.ZipFile, suffix: str, usecols: list[str]) -> pd.DataFrame:
+    name = next(n for n in zf.namelist() if n.lower().endswith(suffix))
+    with zf.open(name) as f:
+        return pd.read_csv(f, usecols=usecols, dtype={"fips_st_cnty": str})
+
+
 def fetch_ahrf_provider_ratio() -> pd.DataFrame:
-    raise NotImplementedError(
-        "Needs AHRF technical documentation to map field codes for primary care "
-        "physician counts and population. See module docstring."
-    )
+    resp = requests.get(AHRF_URL, timeout=120)
+    resp.raise_for_status()
+    zf = zipfile.ZipFile(io.BytesIO(resp.content))
+
+    hp = _read_ahrf_csv(zf, "hp.csv", ["fips_st_cnty", "phys_nf_prim_care_pc_exc_rsdt_23"])
+    pop = _read_ahrf_csv(zf, "pop.csv", ["fips_st_cnty", "popn_est_23"])
+
+    merged = hp.merge(pop, on="fips_st_cnty").rename(columns={"fips_st_cnty": "fips"})
+    physicians = merged["phys_nf_prim_care_pc_exc_rsdt_23"]
+    # A ratio is undefined (not infinite/huge) where a county has zero primary
+    # care physicians — flag those separately rather than encode as a number.
+    merged["primary_care_physicians"] = physicians
+    merged["population_per_primary_care_physician"] = (merged["popn_est_23"] / physicians).where(physicians > 0)
+    merged["has_zero_primary_care_physicians"] = physicians == 0
+
+    return merged[
+        ["fips", "primary_care_physicians", "population_per_primary_care_physician", "has_zero_primary_care_physicians"]
+    ].sort_values("fips").reset_index(drop=True)
 
 
 def main():
     hpsa = fetch_hpsa_designation()
-    out_path = DATA_PROCESSED / "hrsa_hpsa.parquet"
-    hpsa.to_parquet(out_path, index=False)
-    print(f"Wrote {len(hpsa)} designated counties to {out_path} (of 3,144 total — absence means 'not designated')")
+    hpsa.to_parquet(DATA_PROCESSED / "hrsa_hpsa.parquet", index=False)
+    print(f"Wrote {len(hpsa)} designated counties (of 3,144 — absence means 'not designated')")
+
+    ratio = fetch_ahrf_provider_ratio()
+    ratio.to_parquet(DATA_PROCESSED / "hrsa_ahrf.parquet", index=False)
+    print(f"Wrote {len(ratio)} counties to hrsa_ahrf.parquet")
 
 
 if __name__ == "__main__":

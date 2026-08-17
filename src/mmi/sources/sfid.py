@@ -10,12 +10,13 @@ Confirmed columns include: year, leaid, district, state_name, stabbr, ppcstot
 fundinggap (ppcstot - predcost — this is the adequacy measure the data dictionary
 describes), enroll, plus demographic shares.
 
-NOT YET IMPLEMENTED: aggregating leaid (NCES district ID) up to county FIPS.
-Needs the NCES CCD Local Education Agency directory file's county field (or the
-NCES EDGE district-county geographic relationship file, which is a shapefile/GIS
-join rather than a simple key lookup, since some districts span multiple counties).
-Once that crosswalk exists, county adequacy = enrollment-weighted average of
-fundinggap across districts whose primary county is that county.
+County-level aggregation uses district_crosswalk.py (NCES EDGE geocode data),
+which assigns each district to a single county (its administrative office
+location) — the same simplification NCES's own crosswalk makes, even though a
+handful of districts technically span county lines. County adequacy is the
+enrollment-weighted average of fundinggap across districts in that county, so
+large districts dominate the county figure rather than being averaged flat
+against tiny ones.
 """
 import io
 
@@ -23,6 +24,7 @@ import pandas as pd
 import requests
 
 from mmi.config import DATA_PROCESSED
+from mmi.district_crosswalk import fetch_crosswalk
 
 DCD_URL = "https://schoolfinancedata.org/sites/default/files/data/districtcostdatabase_2026.xlsx"
 
@@ -46,14 +48,31 @@ def fetch_district_level() -> pd.DataFrame:
 
 
 def fetch_county_level() -> pd.DataFrame:
-    raise NotImplementedError("Needs leaid -> county FIPS crosswalk. See module docstring.")
+    district = fetch_district_level().copy()
+    district["leaid"] = district["leaid"].astype(str).str.zfill(7)
+
+    crosswalk = fetch_crosswalk()
+    merged = district.merge(crosswalk[["leaid", "fips"]], on="leaid", how="inner")
+    merged = merged.dropna(subset=["fundinggap", "enroll"])
+    merged = merged[merged["enroll"] > 0]
+
+    def weighted_adequacy(g):
+        return pd.Series(
+            {
+                "school_adequacy_rate": (g["fundinggap"] * g["enroll"]).sum() / g["enroll"].sum(),
+                "school_adequacy_n_districts": len(g),
+                "school_adequacy_total_enroll": g["enroll"].sum(),
+            }
+        )
+
+    return merged.groupby("fips").apply(weighted_adequacy, include_groups=False).reset_index()
 
 
 def main():
-    df = fetch_district_level()
-    out_path = DATA_PROCESSED / "sfid_district_raw.parquet"
+    df = fetch_county_level()
+    out_path = DATA_PROCESSED / "sfid.parquet"
     df.to_parquet(out_path, index=False)
-    print(f"Wrote {len(df)} districts (raw, pre-county-aggregation) to {out_path}")
+    print(f"Wrote {len(df)} counties to {out_path}")
 
 
 if __name__ == "__main__":

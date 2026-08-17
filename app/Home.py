@@ -24,7 +24,10 @@ LABELS = {
     "rental_vacancy_rate_pct": "Rental Vacancy Rate (%)",
     "unemployment_rate": "Unemployment Rate (%)",
     "net_migration_rate_per_1000": "Net Migration Rate (per 1,000)",
+    "birth_rate_per_1000": "Birth Rate (per 1,000)",
     "hpsa_score": "HPSA Score (higher = more severe shortage)",
+    "population_per_primary_care_physician": "Population per Primary Care Physician",
+    "school_adequacy_rate": "School Adequacy Rate ($ per pupil, actual - required)",
 }
 
 

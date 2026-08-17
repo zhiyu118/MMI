@@ -1,9 +1,18 @@
-"""Census Population Estimates Program (PEP) pull: net migration.
+"""Census Population Estimates Program (PEP) pull: net migration + birth rate.
 
 Note: post-2020, Census stopped publishing county-level components-of-change
 through the api.census.gov REST API and only distributes it as an annual bulk
 flat file. Verified live at:
 https://www2.census.gov/programs-surveys/popest/datasets/2020-{vintage}/counties/totals/co-est{vintage}-alldata.csv
+
+Birth Rate also lives here rather than in cdc_natality.py: CDC WONDER's own API
+documentation states its public API is policy-restricted from returning natality
+data grouped or limited by any location field (region/state/county) — a firm
+"vital statistics policy for public data sharing" restriction, not a technical
+gap. This same PEP file already carries full-coverage, no-suppression county
+birth counts (BIRTHS{year}) and a pre-computed crude birth rate per 1,000
+(RBIRTH{year}), sourced from the same underlying NCHS vital statistics — so it's
+a strictly better fit than fighting CDC WONDER's UI-only access for this project.
 """
 import pandas as pd
 
@@ -28,6 +37,8 @@ def fetch(vintage: int = VINTAGE, data_year: int = DATA_YEAR) -> pd.DataFrame:
             "pep_data_year": data_year,
             "net_migration": df[f"NETMIG{data_year}"],
             "net_migration_rate_per_1000": df[f"RNETMIG{data_year}"],
+            "births": df[f"BIRTHS{data_year}"],
+            "birth_rate_per_1000": df[f"RBIRTH{data_year}"],
         }
     )
     return out.sort_values("fips").reset_index(drop=True)
