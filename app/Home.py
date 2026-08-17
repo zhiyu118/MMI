@@ -34,7 +34,9 @@ LABELS = {
 
 @st.cache_data
 def get_data() -> pd.DataFrame:
-    return load_county_master()
+    df = load_county_master()
+    df["state"] = df["county_name"].str.rsplit(", ", n=1).str[-1]
+    return df
 
 
 @st.cache_data
@@ -49,31 +51,65 @@ numeric_cols = [c for c in LABELS if c in df.columns]
 st.title("MMI County Dashboard")
 st.caption(f"{len(df):,} counties · updated indicators pulled from Census, BLS, and HRSA")
 
-col1, col2 = st.columns([1, 2])
+st.sidebar.header("Filters")
 
-with col1:
-    variable = st.selectbox("Variable", numeric_cols, format_func=lambda c: LABELS[c])
-    series = df[variable].dropna()
-    lo, hi = float(series.min()), float(series.max())
-    selected_range = st.slider("Filter range", lo, hi, (lo, hi))
-    filtered = df[df[variable].between(*selected_range)]
-    st.metric("Counties matching filter", f"{len(filtered):,} / {len(df):,}")
+state_options = ["All States"] + sorted(df["state"].dropna().unique())
+selected_state = st.sidebar.selectbox("State", state_options)
 
-with col2:
+st.sidebar.markdown("---")
+filter_count_placeholder = st.sidebar.empty()
+selected_vars = st.sidebar.multiselect(
+    "Variables",
+    options=numeric_cols,
+    format_func=lambda c: LABELS[c],
+)
+ordered_selected_vars = [c for c in numeric_cols if c in selected_vars]
+
+bounds = {}
+for var in ordered_selected_vars:
+    st.sidebar.markdown(f"**{LABELS[var]}**")
+    col_min, col_max = st.sidebar.columns(2)
+    min_val = col_min.number_input("Min", key=f"min_{var}", value=None)
+    max_val = col_max.number_input("Max", key=f"max_{var}", value=None)
+    bounds[var] = (min_val, max_val)
+
+n_applied = sum(1 for lo, hi in bounds.values() if lo is not None or hi is not None)
+filter_count_placeholder.markdown(f"**{n_applied} filter(s) applied**")
+
+mask = pd.Series(True, index=df.index)
+if selected_state != "All States":
+    mask &= df["state"] == selected_state
+for var, (lo, hi) in bounds.items():
+    if lo is not None:
+        mask &= df[var] >= lo
+    if hi is not None:
+        mask &= df[var] <= hi
+
+filtered = df[mask].sort_values("county_name")
+
+st.metric("Counties matching filters", f"{len(filtered):,} / {len(df):,}")
+
+if len(filtered) > 0:
     geojson = get_county_geojson()
     fig = px.choropleth(
-        df,
+        filtered,
         geojson=geojson,
         locations="fips",
-        color=variable,
-        color_continuous_scale="Viridis",
+        color_discrete_sequence=["#2E86AB"],
         scope="usa",
-        labels={variable: LABELS[variable]},
         hover_name="county_name",
     )
+    fig.update_traces(showlegend=False)
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=450)
     st.plotly_chart(fig, width="stretch")
 
-st.subheader("Filtered counties")
-display_cols = ["county_name", variable] + [c for c in numeric_cols if c != variable]
-st.dataframe(filtered[["fips"] + display_cols].rename(columns=LABELS), width="stretch", height=400)
+    st.subheader("Filtered counties")
+    display_cols = ["county_name", "state"] + ordered_selected_vars
+    st.dataframe(
+        filtered[["fips"] + display_cols].rename(columns=LABELS),
+        width="stretch",
+        height=400,
+        hide_index=True,
+    )
+else:
+    st.info("No counties match the selected filters.")
