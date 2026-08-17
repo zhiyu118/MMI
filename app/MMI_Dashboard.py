@@ -104,7 +104,8 @@ if len(filtered) > 0:
     st.plotly_chart(fig, width="stretch")
 
     st.subheader("Counties")
-    display_cols = ["county_name", "state"] + numeric_cols
+    unselected_vars = [c for c in numeric_cols if c not in ordered_selected_vars]
+    display_cols = ["county_name", "state"] + ordered_selected_vars + unselected_vars
     rename_map = {"county_name": "County", "state": "State"}
     for c in numeric_cols:
         rename_map[c] = f"🔵 {LABELS[c]}" if c in ordered_selected_vars else LABELS[c]
