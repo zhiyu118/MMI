@@ -85,8 +85,6 @@ if len(qualified) > 0:
     )
     fig.update_traces(showlegend=False)
     fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=450)
-    if selected_state != "All States":
-        fig.update_geos(fitbounds="locations", visible=False)
     st.plotly_chart(fig, width="stretch")
 
     display_cols = ["county_name", "state"] + list(LABELS.keys())
