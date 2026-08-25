@@ -16,19 +16,13 @@ LABELS = {
     "pct_population_65_plus": "Population 65+ (%)",
     "rent_to_income_ratio_pct": "Rent-to-Income Ratio (%)",
     "rental_vacancy_rate_pct": "Rental Vacancy Rate (%)",
-    "birth_rate_per_1000": "Birth Rate (per 1,000)",
-    "net_migration_rate_per_1000": "Net Migration Rate (per 1,000)",
-    "median_age": "Median Age",
 }
 
 CRITERIA = [
-    ("unemployment_rate", "lt", 4.3, "Unemployment Rate < 4.3%"),
+    ("unemployment_rate", "le", 4.3, "Unemployment Rate ≤ 4.3%"),
     ("pct_population_65_plus", "ge", 14, "Population 65+ ≥ 14%"),
     ("rent_to_income_ratio_pct", "le", 30, "Rent-to-Income Ratio ≤ 30%"),
     ("rental_vacancy_rate_pct", "gt", 5, "Rental Vacancy Rate > 5%"),
-    ("birth_rate_per_1000", "lt", 10, "Birth Rate < 10 per 1,000"),
-    ("net_migration_rate_per_1000", "lt", -14, "Net Migration Rate < -14 per 1,000"),
-    ("median_age", "gt", 40, "Median Age > 40"),
 ]
 
 OPS = {
