@@ -49,12 +49,14 @@ def get_county_geojson():
 df = get_data()
 
 st.title("Qualified Counties")
-st.caption("Counties meeting all of the following criteria:")
-st.markdown("\n".join(f"- {label}" for _, _, _, label in CRITERIA))
+st.caption("Toggle criteria on or off — thresholds are fixed.")
+
+enabled = {col: st.checkbox(label, value=True) for col, _, _, label in CRITERIA}
 
 mask = pd.Series(True, index=df.index)
 for col, op, value, _ in CRITERIA:
-    mask &= OPS[op](df[col], value)
+    if enabled[col]:
+        mask &= OPS[op](df[col], value)
 qualified = df[mask]
 
 state_options = ["All States"] + sorted(qualified["state"].dropna().unique())
