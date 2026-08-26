@@ -3,6 +3,7 @@ name: Refresh annual data sources
 on:
   schedule:
     - cron: "0 12 15 12 *"  # Dec 15 — after ACS 5-Year's December release
+    - cron: "0 12 15 3 *"   # Mar 15 — after Census PEP's county file and SFID's edition, both released Feb-March
   workflow_dispatch: {}
 
 jobs:
