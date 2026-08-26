@@ -38,8 +38,8 @@ Run the app locally: `streamlit run app/MMI_Dashboard.py`
 | Census Population Estimates (net migration) | ✅ working | Annual (March, per Census's official PEP release schedule — the county-level file releases later than the December national/state one) |
 | Census Population Estimates (birth rate) | ✅ working — see note below on why this replaced CDC WONDER | Annual (March, same file/schedule as net migration) |
 | BLS LAUS (unemployment) | ✅ working | Monthly |
-| HRSA HPSA (shortage designation) | ✅ working | Continuous — HRSA adds/withdraws designations on a rolling basis, not a fixed annual date |
-| HRSA AHRF (primary care provider ratio) | ✅ working | Annual — no officially published release date; recent vintages have landed in Q4/December |
+| HRSA HPSA (shortage designation) | ✅ working | Annual |
+| HRSA AHRF (primary care provider ratio) | ✅ working | Annual |
 | School Finance Indicators DB (adequacy) | ✅ working — district-level data enrollment-weighted up to county via `src/mmi/district_crosswalk.py` | Annual (February–March, based on the last two editions' release dates) |
 | CNT H+T Index (transportation cost burden) | ✅ working — fully automated, no account needed (see note below) | Irregular — CNT's current release is still 2022 |
 

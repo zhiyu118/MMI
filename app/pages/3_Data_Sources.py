@@ -8,7 +8,7 @@ st.set_page_config(page_title="Data Sources", layout="wide")
 VARIABLES = [
     ("Birth Rate (per 1,000)", "Census Population Estimates Program (PEP)", "Annual (March)"),
     ("Foreign Born (%)", "Census ACS 5-Year", "Annual (December)"),
-    ("HPSA Score (higher = more severe shortage)", "HRSA HPSA (Health Professional Shortage Area) Database", "Continuous — updated as designations are added or withdrawn, not on a fixed date"),
+    ("HPSA Score (higher = more severe shortage)", "HRSA HPSA (Health Professional Shortage Area) Database", "Annual"),
     ("Mean Monthly Household Income ($)", "Census ACS 5-Year", "Annual (December)"),
     ("Mean Monthly Rent ($)", "Census ACS 5-Year", "Annual (December)"),
     ("Median Age", "Census ACS 5-Year", "Annual (December)"),
@@ -16,7 +16,7 @@ VARIABLES = [
     ("Median Monthly Rent ($)", "Census ACS 5-Year", "Annual (December)"),
     ("Net Migration Rate (per 1,000)", "Census Population Estimates Program (PEP)", "Annual (March)"),
     ("Population 65+ (%)", "Census ACS 5-Year", "Annual (December)"),
-    ("Population per Primary Care Physician", "HRSA Area Health Resource Files (AHRF)", "Annual — no officially published date; recent releases have landed in Q4/December"),
+    ("Population per Primary Care Physician", "HRSA Area Health Resource Files (AHRF)", "Annual"),
     ("Property Price-to-Income Ratio", "Census ACS 5-Year", "Annual (December)"),
     ("Rent-to-Income Ratio (%)", "Census ACS 5-Year", "Annual (December)"),
     ("Rental Vacancy Rate (%)", "Census ACS 5-Year", "Annual (December)"),
