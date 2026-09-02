@@ -5,7 +5,7 @@ Variable codes verified against https://api.census.gov/data/{year}/acs/acs5/grou
 import pandas as pd
 import requests
 
-from mmi.config import ACS_YEAR, CENSUS_API_KEY, DATA_PROCESSED, STATE_FIPS
+from mmi.config import CENSUS_API_KEY, DATA_PROCESSED, STATE_FIPS, find_latest_acs_year
 
 MALE_65_PLUS = ["B01001_020E", "B01001_021E", "B01001_022E", "B01001_023E", "B01001_024E", "B01001_025E"]
 FEMALE_65_PLUS = ["B01001_044E", "B01001_045E", "B01001_046E", "B01001_047E", "B01001_048E", "B01001_049E"]
@@ -29,7 +29,8 @@ VARIABLES = [
 ]
 
 
-def fetch(year: int = ACS_YEAR) -> pd.DataFrame:
+def fetch(year: int | None = None) -> pd.DataFrame:
+    year = year or find_latest_acs_year()
     url = f"https://api.census.gov/data/{year}/acs/acs5"
     get_param = "NAME," + ",".join(VARIABLES)
     resp = requests.get(

@@ -2,14 +2,15 @@
 import pandas as pd
 import requests
 
-from mmi.config import ACS_YEAR, CENSUS_API_KEY, STATE_FIPS
+from mmi.config import CENSUS_API_KEY, STATE_FIPS, find_latest_acs_year
 
 
-def fetch_county_universe(year: int = ACS_YEAR) -> pd.DataFrame:
+def fetch_county_universe(year: int | None = None) -> pd.DataFrame:
     """All counties in the 50 states + DC, from the ACS 5-Year geography list.
 
     Returns columns: fips (5-digit state+county), state_fips, county_fips, county_name.
     """
+    year = year or find_latest_acs_year()
     url = f"https://api.census.gov/data/{year}/acs/acs5"
     resp = requests.get(
         url,
