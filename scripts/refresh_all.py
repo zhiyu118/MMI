@@ -9,16 +9,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mmi.sources import acs, bls_laus, cnt_ht, hrsa, pep, sfid  # noqa: E402
 
 # cdc_natality isn't runnable — birth rate comes from pep.py instead. See its docstring.
-ANNUAL_SOURCES = [acs, pep, hrsa, sfid, cnt_ht]
-MONTHLY_SOURCES = [bls_laus]
+# hrsa is split: HPSA rolls on a monthly cadence (no fixed release date, drifts
+# fast — see SESSION_NOTES), AHRF is genuinely annual and wasteful to re-pull
+# more often (large file, doesn't change more than once a year).
+ANNUAL_SOURCES = [
+    ("acs", acs.main),
+    ("pep", pep.main),
+    ("hrsa_ahrf", hrsa.main_ahrf),
+    ("sfid", sfid.main),
+    ("cnt_ht", cnt_ht.main),
+]
+MONTHLY_SOURCES = [
+    ("bls_laus", bls_laus.main),
+    ("hrsa_hpsa", hrsa.main_hpsa),
+]
 
 
-def run(modules):
+def run(sources):
     failures = []
-    for mod in modules:
-        name = mod.__name__.rsplit(".", 1)[-1]
+    for name, func in sources:
         try:
-            mod.main()
+            func()
         except NotImplementedError as e:
             print(f"SKIPPED {name}: {e}")
         except Exception as e:

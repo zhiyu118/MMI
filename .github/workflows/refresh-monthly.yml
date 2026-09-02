@@ -2,7 +2,7 @@ name: Refresh monthly data sources
 
 on:
   schedule:
-    - cron: "0 12 5 * *"  # 5th of each month — after BLS LAUS's monthly release
+    - cron: "0 12 5 * *"  # 5th of each month — BLS LAUS's monthly release, and HRSA HPSA (no fixed date of its own, but drifts too fast for the annual schedule)
   workflow_dispatch: {}
 
 jobs:

@@ -8,7 +8,7 @@ st.set_page_config(page_title="Data Sources", layout="wide")
 VARIABLES = [
     ("Birth Rate (per 1,000)", "Census Population Estimates Program (PEP)", "Annual (March)"),
     ("Foreign Born (%)", "Census ACS 5-Year", "Annual (December)"),
-    ("HPSA Score (higher = more severe shortage)", "HRSA HPSA (Health Professional Shortage Area) Database", "Annual"),
+    ("HPSA Score (higher = more severe shortage)", "HRSA HPSA (Health Professional Shortage Area) Database", "Monthly"),
     ("Mean Monthly Household Income ($)", "Census ACS 5-Year", "Annual (December)"),
     ("Mean Monthly Rent ($)", "Census ACS 5-Year", "Annual (December)"),
     ("Median Age", "Census ACS 5-Year", "Annual (December)"),

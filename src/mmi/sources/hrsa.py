@@ -1,4 +1,4 @@
-"""HRSA pull: HPSA Designation (implemented) + Provider-to-population ratio (TODO).
+"""HRSA pull: HPSA Designation (monthly cadence) + Provider-to-population ratio (annual cadence).
 
 HPSA Designation — verified working against a live download:
 https://data.hrsa.gov/DataDownload/DD_Files/BCD_HPSA_FCT_DET_PC.csv
@@ -88,14 +88,26 @@ def fetch_ahrf_provider_ratio() -> pd.DataFrame:
     ].sort_values("fips").reset_index(drop=True)
 
 
-def main():
+def main_hpsa():
+    """HPSA designations are updated on a rolling basis (no fixed release date),
+    unlike AHRF which is genuinely annual — run this on the monthly schedule,
+    not bundled with the (much larger, truly-annual) AHRF pull."""
     hpsa = fetch_hpsa_designation()
     hpsa.to_parquet(DATA_PROCESSED / "hrsa_hpsa.parquet", index=False)
     print(f"Wrote {len(hpsa)} designated counties (of 3,144 — absence means 'not designated')")
 
+
+def main_ahrf():
     ratio = fetch_ahrf_provider_ratio()
     ratio.to_parquet(DATA_PROCESSED / "hrsa_ahrf.parquet", index=False)
     print(f"Wrote {len(ratio)} counties to hrsa_ahrf.parquet")
+
+
+def main():
+    """Runs both pulls — used for local/manual full refreshes. The scheduled
+    workflows call main_hpsa/main_ahrf separately on their own cadences."""
+    main_hpsa()
+    main_ahrf()
 
 
 if __name__ == "__main__":

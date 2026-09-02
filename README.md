@@ -11,11 +11,19 @@ across all 3,144 US counties (50 states + DC).
 - **Assembly** (`src/mmi/build_db.py`) — joins every source's Parquet file into
   one wide county-level table, keyed on 5-digit county FIPS. Any new file dropped
   into `data/processed/` with a `fips` column gets joined in automatically.
-- **App** (`app/`) — Streamlit interface: choropleth map + range filter on Home,
-  multi-county comparison on County Lookup.
+- **App** (`app/`) — Streamlit interface, 4 pages: **MMI Dashboard** (main
+  page — multi-variable filter panel with a state dropdown and per-variable
+  min/max bounds, choropleth map, full county table), **Qualified Counties**
+  (fixed-threshold screener with toggleable criteria), **County Lookup**
+  (multi-county side-by-side comparison), **Data Sources** (reference table of
+  every variable's source and update cadence).
 - **Refresh** (`.github/workflows/`) — GitHub Actions run the pull scripts on a
   schedule and commit the updated Parquet files, so the deployed app always reads
-  fresh data without a separate database server.
+  fresh data without a separate database server. `refresh-monthly.yml` runs on
+  the 5th of each month (BLS unemployment); `refresh-annual.yml` runs Dec 15
+  (timed for ACS's December release) and Mar 15 (timed for Census PEP's and
+  SFID's Feb–March releases) — see the per-source cadence table below for
+  which sources land in which run.
 
 ## Setup
 
@@ -38,7 +46,7 @@ Run the app locally: `streamlit run app/MMI_Dashboard.py`
 | Census Population Estimates (net migration) | ✅ working | Annual (March, per Census's official PEP release schedule — the county-level file releases later than the December national/state one) |
 | Census Population Estimates (birth rate) | ✅ working — see note below on why this replaced CDC WONDER | Annual (March, same file/schedule as net migration) |
 | BLS LAUS (unemployment) | ✅ working | Monthly |
-| HRSA HPSA (shortage designation) | ✅ working | Annual |
+| HRSA HPSA (shortage designation) | ✅ working | Monthly (moved off the annual schedule — designations drifted ~1% of counties in 3 weeks, too fast for a twice-yearly sweep) |
 | HRSA AHRF (primary care provider ratio) | ✅ working | Annual |
 | School Finance Indicators DB (adequacy) | ✅ working — district-level data enrollment-weighted up to county via `src/mmi/district_crosswalk.py` | Annual (February–March, based on the last two editions' release dates) |
 | CNT H+T Index (transportation cost burden) | ✅ working — fully automated, no account needed (see note below) | Irregular — CNT's current release is still 2022 |
