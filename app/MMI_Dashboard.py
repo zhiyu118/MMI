@@ -26,16 +26,23 @@ LABELS = {
     "net_migration_rate_per_1000": "Net Migration Rate (per 1,000)",
     "birth_rate_per_1000": "Birth Rate (per 1,000)",
     "hpsa_score": "HPSA Score (higher = more severe shortage)",
+    "hpsa_designated": "HPSA Designation (Yes/No)",
     "population_per_primary_care_physician": "Population per Primary Care Physician",
     "school_adequacy_rate": "School Adequacy Rate ($ per pupil, actual - required)",
     "transportation_cost_burden_pct": "Transportation Cost Burden (% of income, 2022)",
 }
 
 
+CATEGORICAL_COLS = {"hpsa_designated"}
+
+
 @st.cache_data
 def get_data() -> pd.DataFrame:
     df = load_county_master()
     df["state"] = df["county_name"].str.rsplit(", ", n=1).str[-1]
+    # A county has an HPSA row only if it's currently designated (see hrsa.py) —
+    # absence after the left join means "not designated," not missing data.
+    df["hpsa_designated"] = df["hpsa_score"].notna()
     return df
 
 
@@ -66,14 +73,21 @@ selected_vars = st.sidebar.multiselect(
 ordered_selected_vars = [c for c in numeric_cols if c in selected_vars]
 
 bounds = {}
+categorical_filters = {}
 for var in ordered_selected_vars:
     st.sidebar.markdown(f"**{LABELS[var]}**")
-    col_min, col_max = st.sidebar.columns(2)
-    min_val = col_min.number_input("Min", key=f"min_{var}", value=None)
-    max_val = col_max.number_input("Max", key=f"max_{var}", value=None)
-    bounds[var] = (min_val, max_val)
+    if var in CATEGORICAL_COLS:
+        categorical_filters[var] = st.sidebar.selectbox(
+            "Value", ["Any", "Yes", "No"], key=f"cat_{var}"
+        )
+    else:
+        col_min, col_max = st.sidebar.columns(2)
+        min_val = col_min.number_input("Min", key=f"min_{var}", value=None)
+        max_val = col_max.number_input("Max", key=f"max_{var}", value=None)
+        bounds[var] = (min_val, max_val)
 
 n_applied = sum(1 for lo, hi in bounds.values() if lo is not None or hi is not None)
+n_applied += sum(1 for v in categorical_filters.values() if v != "Any")
 filter_count_placeholder.markdown(f"**{n_applied} filter(s) applied**")
 
 mask = pd.Series(True, index=df.index)
@@ -84,6 +98,9 @@ for var, (lo, hi) in bounds.items():
         mask &= df[var] >= lo
     if hi is not None:
         mask &= df[var] <= hi
+for var, selection in categorical_filters.items():
+    if selection != "Any":
+        mask &= df[var] == (selection == "Yes")
 
 filtered = df[mask].sort_values("county_name")
 
@@ -109,8 +126,14 @@ if len(filtered) > 0:
     rename_map = {"county_name": "County", "state": "State"}
     for c in numeric_cols:
         rename_map[c] = f"🔵 {LABELS[c]}" if c in ordered_selected_vars else LABELS[c]
+
+    display_df = filtered[["fips"] + display_cols].copy()
+    for c in CATEGORICAL_COLS:
+        if c in display_df.columns:
+            display_df[c] = display_df[c].map({True: "Yes", False: "No"})
+
     st.dataframe(
-        filtered[["fips"] + display_cols].rename(columns=rename_map),
+        display_df.rename(columns=rename_map),
         width="stretch",
         height=400,
         hide_index=True,
