@@ -219,6 +219,34 @@ def fetch_transport() -> pd.DataFrame:
 
 # --- boundaries (static reference file) ---------------------------------------
 
+def _signed_area(ring: list) -> float:
+    """Shoelace area in lon/lat; positive means counter-clockwise."""
+    return sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(ring, ring[1:])) / 2
+
+
+def _orient(ring: list, clockwise: bool) -> list:
+    is_clockwise = _signed_area(ring) < 0
+    return ring if is_clockwise == clockwise else ring[::-1]
+
+
+def rewind_for_plotly(geometry: dict) -> dict:
+    """Exterior rings clockwise, holes counter-clockwise.
+
+    Plotly's geo renderer (d3-geo) treats rings spherically, so it wants the
+    opposite of RFC 7946 (which is what ArcGIS emits). Wrong winding doesn't
+    error — each polygon silently fills the entire view instead of its own
+    shape. Idempotent: orientation is decided from the ring's own area.
+    """
+    def fix(polygon: list) -> list:
+        return [_orient(ring, clockwise=(i == 0)) for i, ring in enumerate(polygon)]
+
+    if geometry["type"] == "Polygon":
+        return {"type": "Polygon", "coordinates": fix(geometry["coordinates"])}
+    if geometry["type"] == "MultiPolygon":
+        return {"type": "MultiPolygon", "coordinates": [fix(p) for p in geometry["coordinates"]]}
+    return geometry
+
+
 def build_boundaries(geoids: set[str]) -> dict:
     features = []
     for layer in BOUNDARY_LAYERS.values():
@@ -239,7 +267,7 @@ def build_boundaries(geoids: set[str]) -> dict:
             gid = feat["properties"]["GEOID"]
             if gid in geoids and feat.get("geometry"):
                 features.append(
-                    {"type": "Feature", "properties": {"GEOID": gid}, "geometry": feat["geometry"]}
+                    {"type": "Feature", "properties": {"GEOID": gid}, "geometry": rewind_for_plotly(feat["geometry"])}
                 )
     return {"type": "FeatureCollection", "features": features}
 
