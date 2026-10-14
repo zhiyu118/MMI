@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from mmi import michigan  # noqa: E402
 from mmi.sources import acs, bls_laus, cnt_ht, hrsa, pep, sfid  # noqa: E402
 
 # cdc_natality isn't runnable — birth rate comes from pep.py instead. See its docstring.
@@ -18,10 +19,13 @@ ANNUAL_SOURCES = [
     ("hrsa_ahrf", hrsa.main_ahrf),
     ("sfid", sfid.main),
     ("cnt_ht", cnt_ht.main),
+    ("michigan_acs", michigan.main_acs),
+    ("michigan_cnt", michigan.main_cnt),
 ]
 MONTHLY_SOURCES = [
     ("bls_laus", bls_laus.main),
     ("hrsa_hpsa", hrsa.main_hpsa),
+    ("michigan_bls", michigan.main_bls),
 ]
 
 

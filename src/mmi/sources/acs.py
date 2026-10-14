@@ -29,31 +29,28 @@ VARIABLES = [
 ]
 
 
-def fetch(year: int | None = None) -> pd.DataFrame:
-    year = year or find_latest_acs_year()
-    url = f"https://api.census.gov/data/{year}/acs/acs5"
-    get_param = "NAME," + ",".join(VARIABLES)
-    resp = requests.get(
-        url,
-        params={"get": get_param, "for": "county:*", "in": "state:*", "key": CENSUS_API_KEY},
-        timeout=60,
-    )
-    resp.raise_for_status()
-    rows = resp.json()
-    df = pd.DataFrame(rows[1:], columns=rows[0])
-    df = df[df["state"].isin(STATE_FIPS)].copy()
-    df["fips"] = df["state"] + df["county"]
+# Census's fixed set of sentinel codes for suppressed/not-computed estimates.
+# (Not a magnitude cutoff — aggregate dollar variables legitimately exceed 1e8
+# for populous counties, e.g. LA County aggregate income is ~$4.3e11.)
+CENSUS_NULL_CODES = {-666666666, -999999999, -888888888, -555555555, -333333333, -222222222}
 
-    # Census's fixed set of sentinel codes for suppressed/not-computed estimates.
-    # (Not a magnitude cutoff — aggregate dollar variables legitimately exceed 1e8
-    # for populous counties, e.g. LA County aggregate income is ~$4.3e11.)
-    CENSUS_NULL_CODES = {-666666666, -999999999, -888888888, -555555555, -333333333, -222222222}
 
+def clean_numeric(df: pd.DataFrame) -> pd.DataFrame:
+    """Coerce the ACS variables to numbers and null out Census sentinel codes."""
+    df = df.copy()
     for col in VARIABLES:
         df[col] = pd.to_numeric(df[col], errors="coerce")
         df.loc[df[col].isin(CENSUS_NULL_CODES), col] = pd.NA
+    return df
 
-    out = pd.DataFrame({"fips": df["fips"], "county_name": df["NAME"], "acs_year": year})
+
+def derive_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    """Dashboard indicators from raw ACS variables (df must be clean_numeric'd).
+
+    Geography-agnostic: shared by the county pull here and the Michigan
+    cities/townships pull, so the formulas can't drift apart.
+    """
+    out = pd.DataFrame(index=df.index)
 
     out["median_monthly_hh_income"] = df["B19013_001E"] / 12
     out["mean_monthly_hh_income"] = (df["B19025_001E"] / df["B19001_001E"]) / 12
@@ -77,6 +74,28 @@ def fetch(year: int | None = None) -> pd.DataFrame:
     # Rental vacancy rate = vacant-for-rent / (renter-occupied + vacant-for-rent), per
     # Census's standard rental vacancy rate definition.
     out["rental_vacancy_rate_pct"] = 100 * df["B25004_002E"] / (df["B25003_003E"] + df["B25004_002E"])
+
+    return out
+
+
+def fetch(year: int | None = None) -> pd.DataFrame:
+    year = year or find_latest_acs_year()
+    url = f"https://api.census.gov/data/{year}/acs/acs5"
+    get_param = "NAME," + ",".join(VARIABLES)
+    resp = requests.get(
+        url,
+        params={"get": get_param, "for": "county:*", "in": "state:*", "key": CENSUS_API_KEY},
+        timeout=60,
+    )
+    resp.raise_for_status()
+    rows = resp.json()
+    df = pd.DataFrame(rows[1:], columns=rows[0])
+    df = df[df["state"].isin(STATE_FIPS)].copy()
+    df["fips"] = df["state"] + df["county"]
+    df = clean_numeric(df)
+
+    out = pd.DataFrame({"fips": df["fips"], "county_name": df["NAME"], "acs_year": year})
+    out = pd.concat([out, derive_indicators(df)], axis=1)
 
     return out.sort_values("fips").reset_index(drop=True)
 

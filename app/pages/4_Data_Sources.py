@@ -32,3 +32,42 @@ df = pd.DataFrame(VARIABLES, columns=["Variable", "Source", "Update Schedule"])
 df = df.sort_values("Variable").reset_index(drop=True)
 
 st.dataframe(df, width="stretch", height=650, hide_index=True)
+
+st.subheader("Michigan Dashboard (cities and townships)")
+st.caption(
+    "Same sources as above, read at city and township level. Indicators that exist only "
+    "for counties (HPSA, primary care physician ratio, birth rate, net migration, school "
+    "adequacy) are not part of the Michigan dashboard."
+)
+
+ACS_MI = "Census ACS 5-Year (place and county-subdivision tables)"
+MI_VARIABLES = [
+    ("Population", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Median Age", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Population 65+ (%)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Foreign Born (%)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Median Monthly Household Income ($)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Mean Monthly Household Income ($)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Median Monthly Rent ($)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Mean Monthly Rent ($)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Rent-to-Income Ratio (%)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Property Price-to-Income Ratio", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Rental Vacancy Rate (%)", ACS_MI, "Cities and townships", "Annual (December)"),
+    ("Median Household Income Margin of Error (% of estimate)", ACS_MI, "Cities and townships", "Annual (December)"),
+    (
+        "Unemployment Rate (%)",
+        "BLS Local Area Unemployment Statistics (LAUS)",
+        "Only cities and townships with 25,000+ residents (BLS threshold)",
+        "Monthly",
+    ),
+    (
+        "Transportation Cost Burden (% of income)",
+        "Center for Neighborhood Technology (CNT) H+T Index",
+        "Cities only — CNT has no township geography",
+        "Irregular — current release is 2022",
+    ),
+]
+mi_df = pd.DataFrame(
+    MI_VARIABLES, columns=["Variable", "Source", "Michigan geography covered", "Update Schedule"]
+)
+st.dataframe(mi_df, width="stretch", hide_index=True)
